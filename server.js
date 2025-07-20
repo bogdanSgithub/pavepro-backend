@@ -12,8 +12,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({
-  origin: 'http://localhost:5173', // React dev server
-  credentials: true,
+  origin: '*',
+  methods: ['POST'],
+  allowedHeaders: ['Content-Type'],
 }));
 
 // Use multer for file handling (in-memory storage)
