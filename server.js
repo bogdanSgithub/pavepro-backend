@@ -23,36 +23,60 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Parse JSON bodies
 app.use(express.json());
 
-// POST route to send an email with optional image attachments
-app.post('/email', upload.array('images'), async (req, res) => {
-  const { to, subject, text } = req.body;
-  const files = req.files || [];
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
-  if (!to || !subject || !text) {
+const cpUpload = upload.fields([
+  { name: 'images', maxCount: 10 },
+  { name: 'attachments', maxCount: 10 },
+]);
+
+app.post('/email', cpUpload, async (req, res) => {
+  const {
+    firstName = '',
+    lastName = '',
+    email = '',
+    phone = '',
+    address = '',
+    message = '',
+  } = req.body;
+
+  if (!firstName || !lastName || !email || !phone || !message) {
     return res.status(400).json({ error: 'Missing required fields.' });
   }
 
-  // Configure nodemailer transport (example with Gmail)
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  const files = [
+    ...(req.files?.images || []),
+    ...(req.files?.attachments || []),
+  ];
 
-  // Convert files into nodemailer attachments
   const attachments = files.map(file => ({
     filename: file.originalname,
     content: file.buffer,
     contentType: file.mimetype,
   }));
 
+  const subject = `Quote Request from ${firstName} ${lastName}`;
+  const text = `
+Name: ${firstName} ${lastName}
+Email: ${email}
+Phone: ${phone}
+Address: ${address || 'N/A'}
+
+Message:
+${message}
+  `;
+
   try {
     await transporter.sendMail({
-      from: process.env.EMAIL_USER, // sender address
+      from: process.env.EMAIL_USER,
       to: process.env.EMAIL_USER,
-      subject: `${to} ${subject}`,
+      subject,
       text,
       attachments,
     });
@@ -63,6 +87,7 @@ app.post('/email', upload.array('images'), async (req, res) => {
     res.status(500).json({ error: 'Failed to send email.' });
   }
 });
+
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
