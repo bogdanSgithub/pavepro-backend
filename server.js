@@ -67,13 +67,13 @@ app.post('/email', cpUpload, async (req, res) => {
 
   const subject = `Quote Request from ${firstName} ${lastName}`;
   const text = `
-Name: ${firstName} ${lastName}
-Email: ${email}
-Phone: ${phone}
-Address: ${address || 'N/A'}
+    Name: ${firstName} ${lastName}
+    Email: ${email}
+    Phone: ${phone}
+    Address: ${address || 'N/A'}
 
-Message:
-${message}
+    Message:
+    ${message}
   `;
 
   try {
