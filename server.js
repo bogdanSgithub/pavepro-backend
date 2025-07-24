@@ -82,6 +82,7 @@ ${message}
     });
 
     res.json({ message: 'Email sent successfully!' });
+    console.log("sent email")
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to send email.' });
