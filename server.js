@@ -3,13 +3,20 @@ const cors = require('cors');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');
-const path = require('path');
-const fs = require('fs');
+const rateLimit = require('express-rate-limit');
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const emailLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5,              // limit each IP to 5 requests per windowMs
+  message: { error: 'Too many requests. Please try again later.' },
+  standardHeaders: true, // Return rate limit info in headers
+  legacyHeaders: false,  // Disable X-RateLimit headers
+});
 
 app.use(cors({
   origin: process.env.FRONTEND_HOST,
@@ -40,7 +47,21 @@ app.get('/up', (req, res) => {
   res.send('hello world');
 });
 
-app.post('/email', cpUpload, async (req, res) => {
+app.post('/email', emailLimiter, cpUpload, async (req, res) => {
+  if (req.body.middleName && req.body.middleName.trim() !== '') {
+    return res.status(400).json({ error: 'Bot detected.' });
+  }
+  
+  const origin = req.get('origin') || '';
+  const referer = req.get('referer') || '';
+
+  const isValidOrigin = origin.startsWith(process.env.FRONTEND_HOST)
+    || referer.startsWith(process.env.FRONTEND_HOST);
+
+  if (!isValidOrigin) {
+    return res.status(403).json({ error: 'Forbidden.' });
+  }
+
   const {
     firstName = '',
     lastName = '',
