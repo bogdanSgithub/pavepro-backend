@@ -36,6 +36,10 @@ const cpUpload = upload.fields([
   { name: 'attachments', maxCount: 10 },
 ]);
 
+app.get('/up', (req, res) => {
+  res.send('hello world');
+});
+
 app.post('/email', cpUpload, async (req, res) => {
   const {
     firstName = '',
